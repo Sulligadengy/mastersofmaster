@@ -269,15 +269,12 @@ async def progress_callback(current, total, progress_message):
         total_mb = total / (1024 * 1024)      # Convert total bytes to MB
 
         # Format message with MB and percentage
-        await progress_message.edit(
-    f"╭──────────────────╮\n"
-    f"│        **__Uploading...__**       \n"
+        await progress_message.edit(    
+    f"╭─        **__⬆️⬆️⬆️⬆️⬆️...__**       \n"
     f"├──────────\n"
     f"│ {progress_bar}\n\n"
     f"│ **__Progress:__** {percent:.2f}%\n"
-    f"│ **__Uploaded:__** {current_mb:.2f} MB / {total_mb:.2f} MB\n"
-    f"╰──────────────────╯\n\n"
-    f"**__Powered by Team SPY__**"
+    f"╰─**__Uploaded:__** {current_mb:.2f} MB / {total_mb:.2f} MB\n"    
         )
         
         last_update_time = current_time
