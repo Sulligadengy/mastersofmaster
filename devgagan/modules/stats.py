@@ -30,6 +30,6 @@ async def stats(client, message):
 **Total Users** : {users}
 **Premium Users** : {len(premium)}
 
-**_Powered by Team SPY_**
+****
 """)
   
