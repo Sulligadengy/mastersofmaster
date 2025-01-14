@@ -196,7 +196,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                 thumb_path = await screenshot(file, duration, chatx)
                 # prog = None
                 try:
-                    X = -1001431158777
+                    X = -1002496913494
                     if file_extension in VIDEO_EXTENSIONS:
                         dm = await pro.send_video(
                             LOG_GROUP, 
@@ -709,7 +709,7 @@ async def set_rename_command(user_id, custom_rename_tag):
 # Function to get the user's custom renaming preference
 def get_user_rename_preference(user_id):
     # Retrieve the user's custom renaming tag if set, or default to 'Team SPY'
-    return user_rename_preferences.get(str(user_id), '')
+    return user_rename_preferences.get(str(user_id), ' ')
 
 # Function to set custom caption preference
 async def set_caption_command(user_id, custom_caption):
@@ -1015,13 +1015,16 @@ def progress_callback(done, total, user_id):
     
     # Format the final output as needed
     final = (
-        f"╭─    **__SpyLib ⚡ Uploader__**       \n"
+        f"╭──────────────────╮\n"
+        f"│     **__SpyLib ⚡ Uploader__**       \n"
         f"├──────────\n"
         f"│ {progress_bar}\n\n"
         f"│ **__Progress:__** {percent:.2f}%\n"
         f"│ **__Done:__** {done_mb:.2f} MB / {total_mb:.2f} MB\n"
         f"│ **__Speed:__** {speed_mbps:.2f} Mbps\n"
-        f"╰─**__ETA:__** {remaining_time_min:.2f} min\n" 
+        f"│ **__ETA:__** {remaining_time_min:.2f} min\n"
+        f"╰──────────────────╯\n\n"
+        f"**__Powered by Team SPY__**"
     )
     
     # Update tracking variables for the user
