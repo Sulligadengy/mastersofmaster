@@ -25,6 +25,8 @@ def home():
         height: 100vh;
         color: white;
         font-family: 'Arial', sans-serif;
+        font-weight: bolder; /* Add this line to make the font thicker and bolder */
+        overflow: auto; /* Enable scrolling */
     }
 
     .container {
@@ -40,7 +42,7 @@ def home():
     h1 {
         font-size: 12vw; /* Increased size of "All" */
         line-height: 1;
-        font-weight: bold;
+        font-weight: bolder; /* Ensure the header is also bold */
         color: white;
         margin: 0;
         text-transform: uppercase;
@@ -84,7 +86,7 @@ def home():
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        animation: float 10s infinite ease-in-out;
+        animation: float 6s infinite ease-in-out; /* Reduced duration to make bubbles move faster */
     }
 
     .bubble:nth-child(1) {
@@ -92,7 +94,7 @@ def home():
         width: 40px;
         height: 40px;
         background: rgba(0, 191, 255, 0.4); /* Light Blue */
-        animation-duration: 12s;
+        animation-duration: 8s; /* Reduced duration */
         animation-delay: 0s;
     }
 
@@ -101,7 +103,7 @@ def home():
         width: 25px;
         height: 25px;
         background: rgba(255, 105, 180, 0.5); /* Hot Pink */
-        animation-duration: 8s;
+        animation-duration: 6s; /* Reduced duration */
         animation-delay: 2s;
     }
 
@@ -110,7 +112,7 @@ def home():
         width: 30px;
         height: 30px;
         background: rgba(255, 165, 0, 0.6); /* Orange */
-        animation-duration: 10s;
+        animation-duration: 7s; /* Reduced duration */
         animation-delay: 4s;
     }
 
@@ -119,7 +121,7 @@ def home():
         width: 20px;
         height: 20px;
         background: rgba(34, 193, 195, 0.5); /* Turquoise */
-        animation-duration: 14s;
+        animation-duration: 9s; /* Reduced duration */
         animation-delay: 6s;
     }
 
@@ -128,7 +130,7 @@ def home():
         width: 35px;
         height: 35px;
         background: rgba(253, 253, 150, 0.4); /* Yellow */
-        animation-duration: 16s;
+        animation-duration: 10s; /* Reduced duration */
         animation-delay: 8s;
     }
 
