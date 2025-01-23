@@ -47,6 +47,8 @@
             font-family: 'Permanent Marker', cursive;
             margin-bottom: 10px;
             text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+            position: relative;
+            animation: hover 2s infinite;
         }
 
         p {
@@ -77,6 +79,18 @@
             }
             100% {
                 background: linear-gradient(135deg, #ffafbd, #ffc3a0);
+            }
+        }
+
+        @keyframes hover {
+            0% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+            100% {
+                transform: translateY(0);
             }
         }
 
@@ -125,30 +139,36 @@
             margin: 0 10px;
             position: relative;
             animation: balloonFloat 5s ease-in-out infinite;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         .balloon:nth-child(1) {
-            background: radial-gradient(circle at bottom, #ff6f61, #ff3d3d);
+            background: url('https://via.placeholder.com/50x70') no-repeat center center;
+            background-size: cover;
             animation-duration: 6s;
         }
 
         .balloon:nth-child(2) {
-            background: radial-gradient(circle at bottom, #ffd54f, #ffcc00);
+            background: url('https://via.placeholder.com/50x70') no-repeat center center;
+            background-size: cover;
             animation-duration: 4s;
         }
 
         .balloon:nth-child(3) {
-            background: radial-gradient(circle at bottom, #a18cd1, #6a4ea6);
+            background: url('https://via.placeholder.com/50x70') no-repeat center center;
+            background-size: cover;
             animation-duration: 5s;
         }
 
         .balloon:nth-child(4) {
-            background: radial-gradient(circle at bottom, #ffafbd, #ff6f61);
+            background: url('https://via.placeholder.com/50x70') no-repeat center center;
+            background-size: cover;
             animation-duration: 7s;
         }
 
         .balloon:nth-child(5) {
-            background: radial-gradient(circle at bottom, #fbc2eb, #a18cd1);
+            background: url('https://via.placeholder.com/50x70') no-repeat center center;
+            background-size: cover;
             animation-duration: 6.5s;
         }
 
@@ -158,7 +178,7 @@
             bottom: -20px;
             left: 50%;
             width: 2px;
-            height: 20px;
+            height: 100px; /* Extend the string to reach the text */
             background: #555;
             transform: translateX(-50%);
         }
@@ -231,6 +251,14 @@
             }
         }
 
+        .meme {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 150px;
+            height: auto;
+        }
+
     </style>
 </head>
 <body>
@@ -247,6 +275,8 @@
         <p>Wishing you a day full of smiles 😄, cakes 🎂, and fun 🎊!</p>
         <p class="message">Okay, that's enough! I want my party now! 🍕🎉</p>
     </div>
+
+    <img class="meme" src="https://via.placeholder.com/150" alt="Meme">
 
     <!-- Confetti Effect -->
     <script>
