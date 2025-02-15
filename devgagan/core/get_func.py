@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 import requests
+import traceback
 from devgagan import app
 from devgagan import sex as gf
 from telethon.tl.types import DocumentAttributeVideo
@@ -15,7 +16,7 @@ from devgagan.core.func import progress_bar, video_metadata, screenshot, chk_use
 from devgagan.core.mongo import db
 from devgagan.modules.shrink import is_user_verified
 from pyrogram.types import Message
-from config import MONGO_DB as MONGODB_CONNECTION_STRING, LOG_GROUP, OWNER_ID, STRING
+from config import MONGO_DB as MONGODB_CONNECTION_STRING, LOG_GROUP, OWNER_ID, STRING, SECONDS
 import cv2
 import random
 from devgagan.core.mongo.db import set_session, remove_session, get_data
@@ -23,24 +24,30 @@ import string
 from telethon import events, Button
 from io import BytesIO
 from SpyLib import fast_upload
+
 def thumbnail(sender):
     return f'{sender}.jpg' if os.path.exists(f'{sender}.jpg') else None
+
 DB_NAME = "smart_users"
 COLLECTION_NAME = "super_user"
 VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'flv', 'wmv', 'webm', 'mpg', 'mpeg', '3gp', 'ts', 'm4v', 'f4v', 'vob']
+
 mongo_client = pymongo.MongoClient(MONGODB_CONNECTION_STRING)
 db = mongo_client[DB_NAME]
 collection = db[COLLECTION_NAME]
+
 if STRING:
     from devgagan import pro
     print("App imported from devgagan.")
 else:
     pro = None
     print("STRING is not available. 'app' is set to None.")
+
 async def fetch_upload_method(user_id):
     """Fetch the user's preferred upload method."""
     user_data = collection.find_one({"user_id": user_id})
     return user_data.get("upload_method", "Pyrogram") if user_data else "Pyrogram"
+
 async def get_msg(userbot, sender, edit_id, msg_link, i, message):
     edit = ""
     chat = ""
@@ -76,7 +83,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                 final_caption = final_caption.replace(word, replace_word)
             caption = f"{final_caption}\n\n__**{custom_caption}**__" if custom_caption else f"{final_caption}"
             if msg.service is not None:
-                return None 
+                return None
             if msg.empty is not None:
                 return None
             if msg.media:
@@ -122,12 +129,20 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                 msg,
                 progress=progress_bar,
                 progress_args=("╭─────────────────────╮\n│      **__Downloading__...**\n├─────────────────────", edit, time.time()))
+            # --- Updated File-Renaming Block ---
             custom_rename_tag = get_user_rename_preference(chatx)
+            # Detect if the media is truly a video
+            is_video = False
+            if msg.media == MessageMediaType.VIDEO:
+                is_video = True
+            elif msg.document and msg.document.mime_type and "video" in msg.document.mime_type.lower():
+                is_video = True
+
             last_dot_index = str(file).rfind('.')
             if last_dot_index != -1 and last_dot_index != 0:
                 ggn_ext = str(file)[last_dot_index + 1:]
                 if ggn_ext.isalpha() and len(ggn_ext) <= 9:
-                    if ggn_ext.lower() in VIDEO_EXTENSIONS:
+                    if is_video and ggn_ext.lower() in VIDEO_EXTENSIONS:
                         original_file_name = str(file)[:last_dot_index]
                         file_extension = 'mp4'
                     else:
@@ -135,20 +150,26 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                         file_extension = ggn_ext
                 else:
                     original_file_name = str(file)
-                    file_extension = 'mp4'
+                    file_extension = 'mp4' if is_video else ''
             else:
                 original_file_name = str(file)
-                file_extension = 'mp4'
+                file_extension = 'mp4' if is_video else ''
+
+            # Apply delete & replacement words on the filename
             delete_words = load_delete_words(chatx)
             for word in delete_words:
                 original_file_name = original_file_name.replace(word, "")
-            video_file_name = original_file_name + " " + custom_rename_tag
             replacements = load_replacement_words(chatx)
             for word, replace_word in replacements.items():
                 original_file_name = original_file_name.replace(word, replace_word)
-            new_file_name = original_file_name + " " + custom_rename_tag + "." + file_extension
+            if file_extension:
+                new_file_name = original_file_name + " " + custom_rename_tag + "." + file_extension
+            else:
+                new_file_name = original_file_name + " " + custom_rename_tag
             os.rename(file, new_file_name)
             file = new_file_name
+            # --- End Updated Block ---
+
             await edit.edit('Applying Watermark ...')
             metadata = video_metadata(file)
             width = metadata['width']
@@ -171,7 +192,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                     X = -1002496913494
                     if file_extension in VIDEO_EXTENSIONS:
                         dm = await pro.send_video(
-                            LOG_GROUP, 
+                            LOG_GROUP,
                             video=file,
                             caption=caption,
                             thumb=thumb_path,
@@ -181,19 +202,17 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                             progress=progress_bar,
                             progress_args=("╭─────────────────────╮\n│       **__4GB Uploader__ ⚡**\n├─────────────────────", edit, time.time()))
                         from_chat = dm.chat.id
-                        from_chat = dm.chat.id
                         mg_id = dm.id
                         await asyncio.sleep(2)
                         await app.copy_message(sender, from_chat, mg_id)
                     else:
                         dm = await pro.send_document(
-                            LOG_GROUP, 
+                            LOG_GROUP,
                             document=file,
                             caption=caption,
                             thumb=thumb_path,
                             progress=progress_bar,
                             progress_args=("╭─────────────────────╮\n│      **__4GB Uploader ⚡__**\n├─────────────────────", edit, time.time()))
-                        from_chat = dm.chat.id
                         from_chat = dm.chat.id
                         mg_id = dm.id
                         await asyncio.sleep(2)
@@ -313,7 +332,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                 except Exception:
                     try:
                         await app.edit_message_text(sender, edit_id, "The bot is not an admin in the specified chat.")
-                    except:
+                    except Exception:
                         await progress_message.edit("Something Greate happened my jaan")
                 os.remove(file)
             await edit.delete()
@@ -333,6 +352,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             await edit.delete()
         except Exception as e:
             await app.edit_message_text(sender, edit_id, f'Failed to save: `{msg_link}`\n\nError: {str(e)}')
+
 async def copy_message_with_chat_id(client, sender, chat_id, message_id):
     target_chat_id = user_chat_ids.get(sender, sender)
     try:
@@ -371,8 +391,10 @@ async def copy_message_with_chat_id(client, sender, chat_id, message_id):
         error_message = f"Error occurred while sending message to chat ID {target_chat_id}: {str(e)}"
         await client.send_message(sender, error_message)
         await client.send_message(sender, f"Make Bot admin in your Channel - {target_chat_id} and restart the process after /cancel")
+
 user_states = {}
 user_chat_ids = {}
+
 def load_delete_words(user_id):
     try:
         words_data = collection.find_one({"_id": user_id})
@@ -383,11 +405,13 @@ def load_delete_words(user_id):
     except Exception as e:
         print(f"Error loading delete words: {e}")
         return set()
+
 def save_delete_words(user_id, delete_words):
     try:
         collection.update_one({"_id": user_id}, {"$set": {"delete_words": list(delete_words)}}, upsert=True)
     except Exception as e:
         print(f"Error saving delete words: {e}")
+
 def load_replacement_words(user_id):
     try:
         words_data = collection.find_one({"_id": user_id})
@@ -398,30 +422,39 @@ def load_replacement_words(user_id):
     except Exception as e:
         print(f"Error loading replacement words: {e}")
         return {}
+
 def save_replacement_words(user_id, replacements):
     try:
         collection.update_one({"_id": user_id}, {"$set": {"replacement_words": replacements}}, upsert=True)
     except Exception as e:
         print(f"Error saving replacement words: {e}")
+
 user_rename_preferences = {}
 user_caption_preferences = {}
+
 def load_user_session(sender_id):
     user_data = collection.find_one({"user_id": sender_id})
     if user_data:
         return user_data.get("session")
     else:
         return None
+
 async def set_rename_command(user_id, custom_rename_tag):
     user_rename_preferences[str(user_id)] = custom_rename_tag
+
 def get_user_rename_preference(user_id):
     return user_rename_preferences.get(str(user_id), ' ')
+
 async def set_caption_command(user_id, custom_caption):
     user_caption_preferences[str(user_id)] = custom_caption
+
 def get_user_caption_preference(user_id):
     return user_caption_preferences.get(str(user_id), '')
+
 sessions = {}
 SET_PIC = "settings.jpg"
 MESS = "Customize by your end and Configure your settings ..."
+
 @gf.on(events.NewMessage(incoming=True, pattern='/settings'))
 async def settings_command(event):
     buttons = [
@@ -434,7 +467,9 @@ async def settings_command(event):
         [Button.url("Report Errors", "https://t.me/team_spy_pro")]
     ]
     await gf.send_file(event.chat_id, file=SET_PIC, caption=MESS, buttons=buttons)
+
 pending_photos = {}
+
 @gf.on(events.CallbackQuery)
 async def callback_query_handler(event):
     user_id = event.sender_id
@@ -502,6 +537,7 @@ async def callback_query_handler(event):
             await event.respond('Thumbnail removed successfully!')
         except FileNotFoundError:
             await event.respond("No thumbnail found to remove.")
+
 @gf.on(events.NewMessage(func=lambda e: e.sender_id in pending_photos))
 async def save_thumbnail(event):
     user_id = event.sender_id
@@ -514,8 +550,7 @@ async def save_thumbnail(event):
     else:
         await event.respond('Please send a photo... Retry')
     pending_photos.pop(user_id, None)
-def save_user_upload_method(user_id, method):
-    collection.update_one({'user_id': user_id}, {'$set': {'upload_method': method}}, upsert=True)
+
 @gf.on(events.NewMessage)
 async def handle_user_input(event):
     user_id = event.sender_id
@@ -551,9 +586,16 @@ async def handle_user_input(event):
                     save_replacement_words(user_id, replacements)
                     await event.respond(f"Replacement saved: '{word}' will be replaced with '{replace_word}'")
         elif session_type == 'addsession':
-            session_string = event.text
-            await set_session(user_id, session_string)
-            await event.respond("✅ Session string added successfully!")
+            session_data = {
+                "user_id": user_id,
+                "session_string": event.text
+            }
+            mcollection.update_one(
+                {"user_id": user_id},
+                {"$set": session_data},
+                upsert=True
+            )
+            await event.respond("Session string added successfully.")
         elif session_type == 'deleteword':
             words_to_delete = event.message.text.split()
             delete_words = load_delete_words(user_id)
@@ -561,6 +603,77 @@ async def handle_user_input(event):
             save_delete_words(user_id, delete_words)
             await event.respond(f"Words added to delete list: {', '.join(words_to_delete)}")
         del sessions[user_id]
+
+# ------------------ Second Part Code ------------------
+
+async def save_thumbnail(event):
+    user_id = event.sender_id
+    if event.photo:
+        temp_path = await event.download_media()
+        if os.path.exists(f'{user_id}.jpg'):
+            os.remove(f'{user_id}.jpg')
+        os.rename(temp_path, f'./{user_id}.jpg')
+        await event.respond('Thumbnail saved successfully!')
+    else:
+        await event.respond('Please send a photo... Retry')
+    pending_photos.pop(user_id, None)
+
+def save_user_upload_method(user_id, method):
+    collection.update_one({'user_id': user_id}, {'$set': {'upload_method': method}}, upsert=True)
+
+@gf.on(events.NewMessage)
+async def handle_user_input(event):
+    user_id = event.sender_id
+    if user_id in sessions:
+        session_type = sessions[user_id]
+        if session_type == 'setchat':
+            try:
+                chat_id = int(event.text)
+                user_chat_ids[user_id] = chat_id
+                await event.respond("Chat ID set successfully!")
+            except ValueError:
+                await event.respond("Invalid chat ID!")
+        elif session_type == 'setrename':
+            custom_rename_tag = event.text
+            await set_rename_command(user_id, custom_rename_tag)
+            await event.respond(f"Custom rename tag set to: {custom_rename_tag}")
+        elif session_type == 'setcaption':
+            custom_caption = event.text
+            await set_caption_command(user_id, custom_caption)
+            await event.respond(f"Custom caption set to: {custom_caption}")
+        elif session_type == 'setreplacement':
+            match = re.match(r"'(.+)' '(.+)'", event.text)
+            if not match:
+                await event.respond("Usage: 'WORD(s)' 'REPLACEWORD'")
+            else:
+                word, replace_word = match.groups()
+                delete_words = load_delete_words(user_id)
+                if word in delete_words:
+                    await event.respond(f"The word '{word}' is in the delete set and cannot be replaced.")
+                else:
+                    replacements = load_replacement_words(user_id)
+                    replacements[word] = replace_word
+                    save_replacement_words(user_id, replacements)
+                    await event.respond(f"Replacement saved: '{word}' will be replaced with '{replace_word}'")
+        elif session_type == 'addsession':
+            session_data = {
+                "user_id": user_id,
+                "session_string": event.text
+            }
+            mcollection.update_one(
+                {"user_id": user_id},
+                {"$set": session_data},
+                upsert=True
+            )
+            await event.respond("Session string added successfully.")
+        elif session_type == 'deleteword':
+            words_to_delete = event.message.text.split()
+            delete_words = load_delete_words(user_id)
+            delete_words.update(words_to_delete)
+            save_delete_words(user_id, delete_words)
+            await event.respond(f"Words added to delete list: {', '.join(words_to_delete)}")
+        del sessions[user_id]
+
 def load_saved_channel_ids():
     saved_channel_ids = set()
     try:
@@ -569,6 +682,7 @@ def load_saved_channel_ids():
     except Exception as e:
         print(f"Error loading saved channel IDs: {e}")
     return saved_channel_ids
+
 @gf.on(events.NewMessage(incoming=True, pattern='/lock'))
 async def lock_command_handler(event):
     if event.sender_id not in OWNER_ID:
@@ -582,7 +696,9 @@ async def lock_command_handler(event):
         await event.respond(f"Channel ID {channel_id} locked successfully.")
     except Exception as e:
         await event.respond(f"Error occurred while locking channel ID: {str(e)}")
+
 user_progress = {}
+
 def progress_callback(done, total, user_id):
     if user_id not in user_progress:
         user_progress[user_id] = {'previous_done': 0, 'previous_time': time.time()}
@@ -591,10 +707,10 @@ def progress_callback(done, total, user_id):
     completed_blocks = int(percent // 10)
     fractional_block = int((percent % 10) // 1)
     remaining_blocks = 10 - completed_blocks - (1 if fractional_block > 0 else 0)
-    progress_bar = "✅" * completed_blocks
+    progress_bar_str = "✅" * completed_blocks
     if fractional_block > 0:
-        progress_bar += "🟨"
-    progress_bar += "🟥" * remaining_blocks
+        progress_bar_str += "🟨"
+    progress_bar_str += "🟥" * remaining_blocks
     done_mb = done / (1024 * 1024)
     total_mb = total / (1024 * 1024)
     speed = done - user_data['previous_done']
@@ -612,7 +728,7 @@ def progress_callback(done, total, user_id):
     final = (f"╭──────────────────╮\n"
              f"│     **__SpyLib ⚡ Uploader__**       \n"
              f"├──────────\n"
-             f"│ {progress_bar}\n\n"
+             f"│ {progress_bar_str}\n\n"
              f"│ **__Progress:__** {percent:.2f}%\n"
              f"│ **__Done:__** {done_mb:.2f} MB / {total_mb:.2f} MB\n"
              f"│ **__Speed:__** {speed_mbps:.2f} Mbps\n"
@@ -622,7 +738,10 @@ def progress_callback(done, total, user_id):
     user_data['previous_done'] = done
     user_data['previous_time'] = time.time()
     return final
+
 async def add_pdf_watermark(input_pdf, output_pdf_path, watermark_text):
     loop = asyncio.get_event_loop()
     result = await loop.run_in_executor(None, add_pdf_watermark_sync, input_pdf, output_pdf_path, watermark_text)
     return result
+
+
