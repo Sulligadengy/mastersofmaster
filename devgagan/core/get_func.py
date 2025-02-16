@@ -25,20 +25,30 @@ from telethon import events, Button
 from io import BytesIO
 from SpyLib import fast_upload
 
-# ----------------- NEW: FLOOD SLEEP HELPER -----------------
+# ----------------- UPDATED FLOOD SLEEP HELPER -----------------
 async def flood_sleep(chat):
     """
     Sleeps to avoid flood limits.
-    If chat (or chat.id) is a positive number (private chat), sleep 20 seconds;
-    otherwise (public/group chat), sleep 5 seconds.
+    
+    For Chat objects:
+      - If chat.username exists (public chat/group/channel), sleep 5 sec;
+      - Otherwise, sleep 20 sec.
+    For int chat IDs:
+      - Positive IDs (private chats) => 20 sec;
+      - Negative IDs (groups/channels)  => 5 sec.
     """
     try:
-        chat_id = chat if isinstance(chat, int) else chat.id
+        if hasattr(chat, "username"):
+            if chat.username:
+                await asyncio.sleep(5)
+            else:
+                await asyncio.sleep(20)
+        else:
+            if int(chat) > 0:
+                await asyncio.sleep(20)
+            else:
+                await asyncio.sleep(5)
     except Exception:
-        chat_id = 0
-    if int(chat_id) > 0:
-        await asyncio.sleep(20)
-    else:
         await asyncio.sleep(5)
 # ---------------------------------------------------------------
 
@@ -147,7 +157,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                             await devgaganin.pin()
                     await devgaganin.copy(LOG_GROUP)
                     await edit.delete()
-                    await flood_sleep(message.chat)  # <-- Flood sleep added
+                    await flood_sleep(message.chat)  # Flood sleep added
                     return
             if not msg.media:
                 if msg.text:
@@ -161,14 +171,14 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                             await devgaganin.pin()
                     await devgaganin.copy(LOG_GROUP)
                     await edit.delete()
-                    await flood_sleep(message.chat)  # <-- Flood sleep added
+                    await flood_sleep(message.chat)  # Flood sleep added
                     return
             if msg.sticker:
                 edit = await app.edit_message_text(sender, edit_id, "Sticker detected...")
                 result = await app.send_sticker(target_chat_id, msg.sticker.file_id)
                 await result.copy(LOG_GROUP)
                 await edit.delete(2)
-                await flood_sleep(message.chat)  # <-- Flood sleep added
+                await flood_sleep(message.chat)  # Flood sleep added
                 return
             file_size = None
             if msg.document or msg.photo or msg.video:
@@ -291,7 +301,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                     asyncio.create_task(delete_after(status_msg3))
                     final_status = await app.send_message(sender, "All chunks uploaded successfully!")
                     asyncio.create_task(delete_after(final_status))
-                await flood_sleep(message.chat)  # <-- Flood sleep added after chunk upload branch
+                await flood_sleep(message.chat)  # Flood sleep added after chunk splitting
                 return
             # ----------- End Chunk Splitting Block ---------------------
 
@@ -313,7 +323,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                         devgaganin = await app.send_video(chat_id=target_chat_id, video=file, caption=caption, height=height, width=width, duration=duration, thumb=thumb_path, progress=progress_bar, progress_args=("╭─────────────────────╮\n│      **__Pyro Uploader__**\n├─────────────────────", edit, time.time()))
                         await devgaganin.copy(LOG_GROUP)
                         await edit.delete()
-                        await flood_sleep(message.chat)  # <-- Flood sleep added
+                        await flood_sleep(message.chat)  # Flood sleep added
                         return
                     elif upload_method == "Telethon":
                         await edit.delete()
@@ -322,7 +332,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                         await gf.send_file(target_chat_id, uploaded, caption=caption, attributes=[DocumentAttributeVideo(duration=duration, w=width, h=height, supports_streaming=True)], thumb=thumb_path)
                         await gf.send_file(LOG_GROUP, uploaded, caption=caption, attributes=[DocumentAttributeVideo(duration=duration, w=width, h=height, supports_streaming=True)], thumb=thumb_path)
                         await progress_message.delete()
-                        await flood_sleep(message.chat)  # <-- Flood sleep added
+                        await flood_sleep(message.chat)  # Flood sleep added
                         return
                 delete_words = load_delete_words(sender)
                 custom_caption = get_user_caption_preference(sender)
@@ -412,7 +422,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             await edit.delete()
             if progress_message:
                 await progress_message.delete()
-            await flood_sleep(message.chat)  # <-- Final flood sleep before function exit
+            await flood_sleep(message.chat)  # Final flood sleep before function exit
         except (ChannelBanned, ChannelInvalid, ChannelPrivate, ChatIdInvalid, ChatInvalid):
             await app.edit_message_text(sender, edit_id, "Have you joined the channel?")
             return
@@ -425,7 +435,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             chat = msg_link.split("/")[-2]
             await copy_message_with_chat_id(app, sender, chat, msg_id)
             await edit.delete()
-            await flood_sleep(message.chat)  # <-- Flood sleep added in else branch
+            await flood_sleep(message.chat)  # Flood sleep in else branch
         except Exception as e:
             await app.edit_message_text(sender, edit_id, f'Failed to save: `{msg_link}`\n\nError: {str(e)}')
 
@@ -463,7 +473,7 @@ async def copy_message_with_chat_id(client, sender, chat_id, message_id):
                 await result.pin(both_sides=True)
             except Exception as e:
                 await result.pin()
-        await flood_sleep(target_chat_id)  # <-- Flood sleep added at end of copy function
+        await flood_sleep(target_chat_id)  # Flood sleep added at end of copy function
     except Exception as e:
         error_message = f"Error occurred while sending message to chat ID {target_chat_id}: {str(e)}"
         await client.send_message(sender, error_message)
@@ -681,6 +691,8 @@ async def handle_user_input(event):
             await event.respond(f"Words added to delete list: {', '.join(words_to_delete)}")
         del sessions[user_id]
 
+# ----------------- Additional Functions (from your snippet) -----------------
+
 def load_saved_channel_ids():
     saved_channel_ids = set()
     try:
@@ -705,6 +717,8 @@ async def lock_command_handler(event):
         await event.respond(f"Error occurred while locking channel ID: {str(e)}")
 
 user_progress = {}
+
+# ----------------- Progress Callback & PDF Watermark -----------------
 
 def progress_callback(done, total, user_id):
     if user_id not in user_progress:
