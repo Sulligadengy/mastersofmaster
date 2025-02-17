@@ -96,7 +96,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
         else:
             chat = msg_link.split("/")[-2]
         if chat in saved_channel_ids:
-            await app.edit_message_text(message.chat.id, edit_id, "Sorry! dude 😎 This channel is protected 🔐 by **__Team SPY__**")
+            await app.edit_message_text(message.chat.id, edit_id, "Sorry! dude 😎 This channel is protected 🔐 by **__Crushe__**")
             return
         file = ""
         try:
@@ -161,7 +161,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             file = await userbot.download_media(
                 msg,
                 progress=progress_bar,
-                progress_args=("╭─────────────────────╮\n│      **__Downloading__...**\n├─────────────────────", edit, time.time()))
+                progress_args=("╭─────────────────────╮\n│      **__Downloading by Crushe__...**\n├─────────────────────", edit, time.time()))
             # --- Updated File-Renaming Block ---
             custom_rename_tag = get_user_rename_preference(chatx)
             # Detect if the media is truly a video
