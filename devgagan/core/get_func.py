@@ -6,7 +6,7 @@ import subprocess
 import requests
 import traceback
 from devgagan import app
-from devgagan import sex as gff
+from devgagan import sex as gf
 from telethon.tl.types import DocumentAttributeVideo
 import pymongo
 from pyrogram import Client, filters
