@@ -319,7 +319,7 @@ async def batch_link(_, message):
                         link = get_link(url)
                         
                         if 't.me/b/' in link or 't.me/c/' in link:
-                            msg = await app.send_message(message.chat.id, f"Processing...")
+                            msg = await app.send_message(message.chat.id, None)
                             await process_and_upload_link(userbot, user_id, msg.id, link, 0, message)
                             await pin_msg.edit_text(
                             f"⚡\n__Processing: {i - cs + 1}/{cl}__\n\nBatch process started",
