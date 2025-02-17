@@ -306,7 +306,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                             duration=duration,
                             thumb=thumb_path,
                             progress=progress_bar,
-                            progress_args=("╭─────────────────────╮\n│      **__Pyro Uploader__**\n├─────────────────────", edit, time.time())
+                            progress_args=("╭─────────────────────╮\n│      **__Crushe Uploader__**\n├─────────────────────", edit, time.time())
                         )
                         await devgaganin.copy(LOG_GROUP)
                         await edit.delete()
@@ -316,7 +316,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                         return
                     elif upload_method == "Telethon":
                         await edit.delete()
-                        progress_message = await gf.send_message(sender, "__**Uploading ...**__")
+                        progress_message = await gf.send_message(sender, "__**Uploading by crushe ...**__")
                         uploaded = await fast_upload(
                             gf,
                             file,
@@ -366,12 +366,12 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                             thumb=thumb_path,
                             duration=duration,
                             progress=progress_bar,
-                            progress_args=("╭─────────────────────╮\n│      **__Pyro Uploader__**\n├─────────────────────", edit, time.time())
+                            progress_args=("╭─────────────────────╮\n│      **__Crushe Uploader__**\n├─────────────────────", edit, time.time())
                         )
                         await devgaganin.copy(LOG_GROUP)
                     elif upload_method == "Telethon":
                         await edit.delete()
-                        progress_message = await gf.send_message(sender, "**__Starting Upload__**")
+                        progress_message = await gf.send_message(sender, "**__Starting Upload by Crushe__**")
                         uploaded = await fast_upload(
                             gf,
                             file,
@@ -449,12 +449,12 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                                 duration=duration,
                                 thumb=thumb_path,
                                 progress=progress_bar,
-                                progress_args=("╭─────────────────────╮\n│      **__Pyro Uploader__**\n├─────────────────────", edit, time.time())
+                                progress_args=("╭─────────────────────╮\n│      **__Crushe Uploader__**\n├─────────────────────", edit, time.time())
                             )
                             await devgaganin.copy(LOG_GROUP)
                         elif upload_method == "Telethon":
                             await edit.delete()
-                            progress_message = await gf.send_message(sender, "**__Starting Upload__**")
+                            progress_message = await gf.send_message(sender, "**__Starting Upload by Crushe__**")
                             uploaded = await fast_upload(
                                 gf,
                                 file,
@@ -484,12 +484,12 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                                 caption=caption,
                                 thumb=thumb_path,
                                 progress=progress_bar,
-                                progress_args=("╭─────────────────────╮\n│      **__Pyro Uploader__**\n├─────────────────────", edit, time.time())
+                                progress_args=("╭─────────────────────╮\n│      **__Crushe Uploader__**\n├─────────────────────", edit, time.time())
                             )
                             await devgaganin.copy(LOG_GROUP)
                         elif upload_method == "Telethon":
                             await edit.delete()
-                            progress_message = await gf.send_message(sender, "Uploading ...")
+                            progress_message = await gf.send_message(sender, "Uploading by Crushe...")
                             uploaded = await fast_upload(
                                 gf,
                                 file,
@@ -518,7 +518,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             print(f"Errrrror {e}")
             await edit.delete()
     else:
-        edit = await app.edit_message_text(sender, edit_id, "Cloning...")
+        edit = await app.edit_message_text(sender, edit_id, "Cloning by Crushe...")
         try:
             chat = msg_link.split("/")[-2]
             await copy_message_with_chat_id(app, sender, chat, msg_id)
