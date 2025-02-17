@@ -637,7 +637,7 @@ async def settings_command(event):
         [Button.inline("Session Login", b'addsession'), Button.inline("Logout", b'logout')],
         [Button.inline("Set Thumbnail", b'setthumb'), Button.inline("Remove Thumbnail", b'remthumb')],
         [Button.inline("Upload Method", b'uploadmethod')],
-        [Button.url("Report Errors", "https://t.me/team_spy_pro")]
+        [Button.url("Report Errors", "https://t.me/She_who_remain")]
     ]
     await gf.send_file(event.chat_id, file=SET_PIC, caption=MESS, buttons=buttons)
 
@@ -681,15 +681,15 @@ async def callback_query_handler(event):
         telethon_check = " ✅" if current_method == "Telethon" else ""
         buttons = [
             [Button.inline(f"Pyrogram v2{pyrogram_check}", b'pyrogram')],
-            [Button.inline(f"SpyLib v1 ⚡{telethon_check}", b'telethon')]
+            [Button.inline(f"Crushe v1 ⚡{telethon_check}", b'telethon')]
         ]
-        await event.edit("Choose your preferred upload method:\n\n__**Note:** **SpyLib ⚡**, built on Telethon(base), still in beta.__", buttons=buttons)
+        await event.edit("Choose your preferred upload method:\n\n__**Note:** **Crushe ⚡**, built on Telethon(base), still in beta.__", buttons=buttons)
     elif event.data == b'pyrogram':
         save_user_upload_method(user_id, "Pyrogram")
         await event.edit("Upload method set to **Pyrogram** ✅")
     elif event.data == b'telethon':
         save_user_upload_method(user_id, "Telethon")
-        await event.edit("Upload method set to **SpyLib ⚡\n\nThanks for choosing this library as it will help me to analyze the error raise issues on github.** ✅")
+        await event.edit("Upload method set to **Crushe ⚡\n\nThanks for choosing this library as it will help me to analyze the error raise issues on github.** ✅")
     elif event.data == b'reset':
         try:
             user_id_str = str(user_id)
@@ -829,7 +829,7 @@ def progress_callback(done, total, user_id):
         remaining_time = 0
     remaining_time_min = remaining_time / 60
     final = (f"╭──────────────────╮\n"
-             f"│     **__SpyLib ⚡ Uploader__**       \n"
+             f"│     **__Crushe ⚡ Uploader__**       \n"
              f"├──────────\n"
              f"│ {progress_bar_str}\n\n"
              f"│ **__Progress:__** {percent:.2f}%\n"
@@ -837,7 +837,7 @@ def progress_callback(done, total, user_id):
              f"│ **__Speed:__** {speed_mbps:.2f} Mbps\n"
              f"│ **__ETA:__** {remaining_time_min:.2f} min\n"
              f"╰──────────────────╯\n\n"
-             f"**__Powered by Team SPY__**")
+             f"**__Powered by Crushe__**")
     user_data['previous_done'] = done
     user_data['previous_time'] = time.time()
     return final
