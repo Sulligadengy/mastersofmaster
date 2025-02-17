@@ -6,7 +6,7 @@ import subprocess
 import requests
 import traceback
 from devgagan import app
-from devgagan import sex as gf
+from devgagan import sex as gff
 from telethon.tl.types import DocumentAttributeVideo
 import pymongo
 from pyrogram import Client, filters
@@ -55,15 +55,14 @@ async def delete_after(message, delay=5):
         await message.delete()
     except Exception:
         pass
-# ---------------------------------------------------------------
 
+# ---------------------------------------------------------------
 def thumbnail(sender):
     return f'{sender}.jpg' if os.path.exists(f'{sender}.jpg') else None
 
 DB_NAME = "smart_users"
 COLLECTION_NAME = "super_user"
 VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'flv', 'wmv', 'webm', 'mpg', 'mpeg', '3gp', 'ts', 'm4v', 'f4v', 'vob']
-
 mongo_client = pymongo.MongoClient(MONGODB_CONNECTION_STRING)
 db = mongo_client[DB_NAME]
 collection = db[COLLECTION_NAME]
@@ -118,6 +117,10 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                 return None
             if msg.empty is not None:
                 return None
+            # NEW: If no clonable content is found, simply return.
+            if not (msg.text or msg.media or msg.sticker):
+                return
+
             if msg.media:
                 if msg.media == MessageMediaType.WEB_PAGE:
                     target_chat_id = user_chat_ids.get(chatx, chatx)
@@ -130,7 +133,6 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                             await devgaganin.pin()
                     await devgaganin.copy(LOG_GROUP)
                     await edit.delete()
-                    # No file downloaded in this branch—cleanup not needed.
                     return
             if not msg.media:
                 if msg.text:
@@ -151,6 +153,8 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                 await result.copy(LOG_GROUP)
                 await edit.delete(2)
                 return
+
+            # (Rest of the media processing code remains unchanged)
             file_size = None
             if msg.document or msg.photo or msg.video:
                 file_size = msg.document.file_size if msg.document else (msg.photo.file_size if msg.photo else msg.video.file_size)
@@ -170,7 +174,6 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                 is_video = True
             elif msg.document and msg.document.mime_type and "video" in msg.document.mime_type.lower():
                 is_video = True
-
             last_dot_index = str(file).rfind('.')
             if last_dot_index != -1 and last_dot_index != 0:
                 ggn_ext = str(file)[last_dot_index + 1:]
@@ -187,7 +190,6 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             else:
                 original_file_name = str(file)
                 file_extension = 'mp4' if is_video else ''
-
             # Apply delete & replacement words on the filename
             delete_words = load_delete_words(chatx)
             for word in delete_words:
@@ -202,7 +204,6 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             os.rename(file, new_file_name)
             file = new_file_name
             # --- End Updated Block ---
-
             await edit.edit('Applying Watermark ...')
             metadata = video_metadata(file)
             width = metadata['width']
@@ -211,7 +212,6 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             thumb_path = await screenshot(file, duration, chatx)
             file_extension = file.split('.')[-1]
             await edit.edit('**__Checking file...__**')
-
             # ----------- Updated >2GB Handling (Chunk Splitting) -----------
             file_size = os.path.getsize(file)
             if file_size > 2 * 1024**3:
@@ -275,7 +275,6 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                     asyncio.create_task(delete_after(final_status))
                 return
             # ----------- End Chunk Splitting Block ---------------------
-
             if msg.voice:
                 result = await app.send_voice(target_chat_id, file)
                 await result.copy(LOG_GROUP)
@@ -393,7 +392,6 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                             attributes=[DocumentAttributeVideo(duration=duration, w=width, h=height, supports_streaming=True)],
                             thumb=thumb_path
                         )
-                    # In either branch, after upload, remove the file.
                     if os.path.exists(file):
                         os.remove(file)
                     file = None
@@ -530,6 +528,10 @@ async def copy_message_with_chat_id(client, sender, chat_id, message_id):
     target_chat_id = user_chat_ids.get(sender, sender)
     try:
         msg = await client.get_messages(chat_id, message_id)
+        # NEW: If no clonable content is found, simply return.
+        if not (msg.text or msg.media or msg.sticker):
+            return
+
         custom_caption = get_user_caption_preference(sender)
         original_caption = msg.caption if msg.caption else ''
         final_caption = f"{original_caption}" if custom_caption else f"{original_caption}"
@@ -823,8 +825,8 @@ def progress_callback(done, total, user_id):
         speed_mbps = (speed_bps * 8) / (1024 * 1024)
     else:
         speed_mbps = 0
-    if speed_bps > 0:
-        remaining_time = (total - done) / speed_bps
+    if elapsed_time > 0:
+        remaining_time = (total - done) / (speed / elapsed_time)
     else:
         remaining_time = 0
     remaining_time_min = remaining_time / 60
@@ -846,5 +848,3 @@ async def add_pdf_watermark(input_pdf, output_pdf_path, watermark_text):
     loop = asyncio.get_event_loop()
     result = await loop.run_in_executor(None, add_pdf_watermark_sync, input_pdf, output_pdf_path, watermark_text)
     return result
-
-# Code completed
