@@ -17,7 +17,7 @@ async def schedule_expiry_check():
 async def devggn_boot():
     for all_module in ALL_MODULES:
         importlib.import_module("devgagan.modules." + all_module)
-    print("Bot deployed...🎉")
+    print("Bot deployed by Crushe...🎉")
 
     # Start the background task for checking expired users
     asyncio.create_task(schedule_expiry_check())
