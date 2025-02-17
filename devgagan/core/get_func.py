@@ -80,14 +80,13 @@ async def fetch_upload_method(user_id):
     return user_data.get("upload_method", "Pyrogram") if user_data else "Pyrogram"
 
 async def get_msg(userbot, sender, edit_id, msg_link, i, message):
-    edit = ""
     chat = ""
     progress_message = None
-    round_message = False
     if "?single" in msg_link:
         msg_link = msg_link.split("?single")[0]
     msg_id = int(msg_link.split("/")[-1]) + int(i)
     saved_channel_ids = load_saved_channel_ids()
+    # For t.me/c/ or t.me/b/ links
     if 't.me/c/' in msg_link or 't.me/b/' in msg_link:
         parts = msg_link.split("/")
         if 't.me/b/' not in msg_link:
@@ -117,14 +116,15 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                 return None
             if msg.empty is not None:
                 return None
-            # NEW: If no clonable content is found, simply return.
+            # If no clonable content is found, return immediately.
             if not (msg.text or msg.media or msg.sticker):
                 return
 
             if msg.media:
                 if msg.media == MessageMediaType.WEB_PAGE:
                     target_chat_id = user_chat_ids.get(chatx, chatx)
-                    edit = await app.edit_message_text(sender, edit_id, "Cloning...")
+                    # Send processing message then process
+                    proc = await app.edit_message_text(sender, edit_id, "Cloning...")
                     devgaganin = await app.send_message(target_chat_id, msg.text.markdown)
                     if msg.pinned_message:
                         try:
@@ -132,12 +132,12 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                         except Exception as e:
                             await devgaganin.pin()
                     await devgaganin.copy(LOG_GROUP)
-                    await edit.delete()
+                    await proc.delete()
                     return
             if not msg.media:
                 if msg.text:
                     target_chat_id = user_chat_ids.get(chatx, chatx)
-                    edit = await app.edit_message_text(sender, edit_id, "Cloning...")
+                    proc = await app.edit_message_text(sender, edit_id, "Cloning...")
                     devgaganin = await app.send_message(target_chat_id, msg.text.markdown)
                     if msg.pinned_message:
                         try:
@@ -145,27 +145,27 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                         except Exception as e:
                             await devgaganin.pin()
                     await devgaganin.copy(LOG_GROUP)
-                    await edit.delete()
+                    await proc.delete()
                     return
             if msg.sticker:
-                edit = await app.edit_message_text(sender, edit_id, "Sticker detected...")
+                proc = await app.edit_message_text(sender, edit_id, "Sticker detected...")
                 result = await app.send_sticker(target_chat_id, msg.sticker.file_id)
                 await result.copy(LOG_GROUP)
-                await edit.delete(2)
+                await proc.delete(2)
                 return
 
-            # (Rest of the media processing code remains unchanged)
+            # --- (Rest of your media processing code remains unchanged) ---
             file_size = None
             if msg.document or msg.photo or msg.video:
                 file_size = msg.document.file_size if msg.document else (msg.photo.file_size if msg.photo else msg.video.file_size)
             if file_size and file_size > size_limit and (freecheck == 1 and not verified):
-                await edit.edit("**__❌ File size is greater than 2 GB, purchase premium to proceed or use /token to get 3 hour access for free__")
+                proc = await app.edit_message_text(sender, edit_id, "**__❌ File size is greater than 2 GB, purchase premium to proceed or use /token to get 3 hour access for free__")
                 return
-            edit = await app.edit_message_text(sender, edit_id, "Trying to Download...")
+            proc = await app.edit_message_text(sender, edit_id, "Trying to Download...")
             file = await userbot.download_media(
                 msg,
                 progress=progress_bar,
-                progress_args=("╭─────────────────────╮\n│      **__Downloading__...**\n├─────────────────────", edit, time.time()))
+                progress_args=("╭─────────────────────╮\n│      **__Downloading__...**\n├─────────────────────", proc, time.time()))
             # --- Updated File-Renaming Block ---
             custom_rename_tag = get_user_rename_preference(chatx)
             # Detect if the media is truly a video
@@ -204,19 +204,19 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             os.rename(file, new_file_name)
             file = new_file_name
             # --- End Updated Block ---
-            await edit.edit('Applying Watermark ...')
+            await proc.edit('Applying Watermark ...')
             metadata = video_metadata(file)
             width = metadata['width']
             height = metadata['height']
             duration = metadata['duration']
             thumb_path = await screenshot(file, duration, chatx)
             file_extension = file.split('.')[-1]
-            await edit.edit('**__Checking file...__**')
+            await proc.edit('**__Checking file...__**')
             # ----------- Updated >2GB Handling (Chunk Splitting) -----------
             file_size = os.path.getsize(file)
             if file_size > 2 * 1024**3:
                 try:
-                    await edit.delete()
+                    await proc.delete()
                 except Exception:
                     pass
                 status_msg1 = await app.send_message(sender, f"Large file detected (> {file_size/1024**3:.2f} GB). Splitting into 2GB chunks...")
@@ -305,16 +305,16 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                             duration=duration,
                             thumb=thumb_path,
                             progress=progress_bar,
-                            progress_args=("╭─────────────────────╮\n│      **__Pyro Uploader__**\n├─────────────────────", edit, time.time())
+                            progress_args=("╭─────────────────────╮\n│      **__Pyro Uploader__**\n├─────────────────────", proc, time.time())
                         )
                         await devgaganin.copy(LOG_GROUP)
-                        await edit.delete()
+                        await proc.delete()
                         if os.path.exists(file):
                             os.remove(file)
                         file = None
                         return
                     elif upload_method == "Telethon":
-                        await edit.delete()
+                        await proc.delete()
                         progress_message = await gf.send_message(sender, "__**Uploading ...**__")
                         uploaded = await fast_upload(
                             gf,
@@ -365,11 +365,11 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                             thumb=thumb_path,
                             duration=duration,
                             progress=progress_bar,
-                            progress_args=("╭─────────────────────╮\n│      **__Pyro Uploader__**\n├─────────────────────", edit, time.time())
+                            progress_args=("╭─────────────────────╮\n│      **__Pyro Uploader__**\n├─────────────────────", proc, time.time())
                         )
                         await devgaganin.copy(LOG_GROUP)
                     elif upload_method == "Telethon":
-                        await edit.delete()
+                        await proc.delete()
                         progress_message = await gf.send_message(sender, "**__Starting Upload__**")
                         uploaded = await fast_upload(
                             gf,
@@ -401,7 +401,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                     except Exception:
                         await progress_message.edit("Something Greate happened my jaan")
             elif msg.media == MessageMediaType.PHOTO:
-                await edit.edit("**Uploading photo...")
+                proc = await app.edit_message_text(sender, edit_id, "**Uploading photo...")
                 delete_words = load_delete_words(sender)
                 custom_caption = get_user_caption_preference(sender)
                 original_caption = msg.caption if msg.caption else ''
@@ -447,11 +447,11 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                                 duration=duration,
                                 thumb=thumb_path,
                                 progress=progress_bar,
-                                progress_args=("╭─────────────────────╮\n│      **__Pyro Uploader__**\n├─────────────────────", edit, time.time())
+                                progress_args=("╭─────────────────────╮\n│      **__Pyro Uploader__**\n├─────────────────────", proc, time.time())
                             )
                             await devgaganin.copy(LOG_GROUP)
                         elif upload_method == "Telethon":
-                            await edit.delete()
+                            await proc.delete()
                             progress_message = await gf.send_message(sender, "**__Starting Upload__**")
                             uploaded = await fast_upload(
                                 gf,
@@ -482,11 +482,11 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                                 caption=caption,
                                 thumb=thumb_path,
                                 progress=progress_bar,
-                                progress_args=("╭─────────────────────╮\n│      **__Pyro Uploader__**\n├─────────────────────", edit, time.time())
+                                progress_args=("╭─────────────────────╮\n│      **__Pyro Uploader__**\n├─────────────────────", proc, time.time())
                             )
                             await devgaganin.copy(LOG_GROUP)
                         elif upload_method == "Telethon":
-                            await edit.delete()
+                            await proc.delete()
                             progress_message = await gf.send_message(sender, "Uploading ...")
                             uploaded = await fast_upload(
                                 gf,
@@ -505,7 +505,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                         await app.edit_message_text(sender, edit_id, "The bot is not an admin in the specified chat.")
                     except Exception:
                         await progress_message.edit("Something Greate happened my jaan")
-            await edit.delete()
+            await proc.delete()
             if progress_message:
                 await progress_message.delete()
             return
@@ -514,13 +514,20 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             return
         except Exception as e:
             print(f"Errrrror {e}")
-            await edit.delete()
+            await proc.delete()
     else:
-        edit = await app.edit_message_text(sender, edit_id, "Cloning...")
+        # For msg_links that don't contain t.me/c/ or t.me/b/,
+        # first fetch the target message to check if clonable content exists.
         try:
             chat = msg_link.split("/")[-2]
-            await copy_message_with_chat_id(app, sender, chat, msg_id)
-            await edit.delete()
+            msg = await app.get_messages(chat, msg_id)
+            if not (msg.text or msg.media or msg.sticker):
+                # Nothing clonable; do nothing.
+                return
+            # Otherwise, send the processing message, copy, then auto-delete.
+            proc = await app.edit_message_text(sender, edit_id, "Cloning...")
+            result = await copy_message_with_chat_id(app, sender, chat, msg_id)
+            await proc.delete()
         except Exception as e:
             await app.edit_message_text(sender, edit_id, f'Failed to save: `{msg_link}`\n\nError: {str(e)}')
 
@@ -528,9 +535,9 @@ async def copy_message_with_chat_id(client, sender, chat_id, message_id):
     target_chat_id = user_chat_ids.get(sender, sender)
     try:
         msg = await client.get_messages(chat_id, message_id)
-        # NEW: If no clonable content is found, simply return.
+        # If no clonable content is found, return False.
         if not (msg.text or msg.media or msg.sticker):
-            return
+            return False
 
         custom_caption = get_user_caption_preference(sender)
         original_caption = msg.caption if msg.caption else ''
@@ -562,10 +569,12 @@ async def copy_message_with_chat_id(client, sender, chat_id, message_id):
                 await result.pin(both_sides=True)
             except Exception as e:
                 await result.pin()
+        return True
     except Exception as e:
         error_message = f"Error occurred while sending message to chat ID {target_chat_id}: {str(e)}"
         await client.send_message(sender, error_message)
         await client.send_message(sender, f"Make Bot admin in your Channel - {target_chat_id} and restart the process after /cancel")
+        return False
 
 user_states = {}
 user_chat_ids = {}
