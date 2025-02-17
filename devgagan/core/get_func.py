@@ -244,7 +244,7 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                             document=chunk,
                             caption=chunk_caption,
                             progress=progress_bar,
-                            progress_args=('**Uploading...**', progress_status, time.time())
+                            progress_args=('**Uploading by Crushe...**', progress_status, time.time())
                         )
                         if msg.pinned_message:
                             try:
