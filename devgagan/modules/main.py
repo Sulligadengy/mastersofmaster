@@ -257,7 +257,7 @@ async def batch_link(_, message):
                                 userbot = None
                         else:
                             userbot = None
-                        msg = await app.send_message(message.chat.id, f"Processing...")
+                        msg = await app.send_message(message.chat.id, f"Processing Crushe...")
                         await process_and_upload_link(userbot, user_id, msg.id, link, 0, message)
                         await pin_msg.edit_text(
                         f"⚡\n__Processing: {i - cs + 1}/{cl}__\n\nBatch process started",
@@ -269,7 +269,7 @@ async def batch_link(_, message):
 
         if not any(prefix in start_id for prefix in ['t.me/c/', 't.me/b/']):
             await set_interval(user_id, interval_minutes=20)
-            await app.send_message(message.chat.id, "Batch completed successfully! 🎉")
+            await app.send_message(message.chat.id, "Batch completed successfully by Crushe! 🎉")
             await pin_msg.edit_text(
                         f"Batch process completed for {cl} messages enjoy 🌝\n\n****",
                         reply_markup=keyboard
