@@ -86,7 +86,6 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
         msg_link = msg_link.split("?single")[0]
     msg_id = int(msg_link.split("/")[-1]) + int(i)
     saved_channel_ids = load_saved_channel_ids()
-    # For t.me/c/ or t.me/b/ links
     if 't.me/c/' in msg_link or 't.me/b/' in msg_link:
         parts = msg_link.split("/")
         if 't.me/b/' not in msg_link:
@@ -100,7 +99,14 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
         try:
             size_limit = 2 * 1024 * 1024 * 1024  # 2GB
             chatx = message.chat.id
-            msg = await userbot.get_messages(chat, msg_id)
+
+            # First, try to fetch the message.
+            try:
+                msg = await userbot.get_messages(chat, msg_id)
+            except Exception:
+                # If message is deleted or link is wrong, exit without showing any "Processing..." message.
+                return
+
             print(msg)
             target_chat_id = user_chat_ids.get(chatx, chatx)
             freecheck = await chk_user(message, sender)
@@ -115,15 +121,15 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             if msg.service is not None:
                 return None
             if msg.empty is not None:
-                return None
+                return
             # If no clonable content is found, return immediately.
             if not (msg.text or msg.media or msg.sticker):
                 return
 
+            # Only now do we show a processing message when we are sure content exists.
             if msg.media:
                 if msg.media == MessageMediaType.WEB_PAGE:
                     target_chat_id = user_chat_ids.get(chatx, chatx)
-                    # Send processing message then process
                     proc = await app.edit_message_text(sender, edit_id, "Cloning...")
                     devgaganin = await app.send_message(target_chat_id, msg.text.markdown)
                     if msg.pinned_message:
@@ -155,9 +161,10 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                 return
 
             # --- (Rest of your media processing code remains unchanged) ---
-            file_size = None
             if msg.document or msg.photo or msg.video:
                 file_size = msg.document.file_size if msg.document else (msg.photo.file_size if msg.photo else msg.video.file_size)
+            else:
+                file_size = None
             if file_size and file_size > size_limit and (freecheck == 1 and not verified):
                 proc = await app.edit_message_text(sender, edit_id, "**__❌ File size is greater than 2 GB, purchase premium to proceed or use /token to get 3 hour access for free__")
                 return
@@ -203,7 +210,6 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                 new_file_name = original_file_name + " " + custom_rename_tag
             os.rename(file, new_file_name)
             file = new_file_name
-            # --- End Updated Block ---
             await proc.edit('Applying Watermark ...')
             metadata = video_metadata(file)
             width = metadata['width']
@@ -212,7 +218,6 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             thumb_path = await screenshot(file, duration, chatx)
             file_extension = file.split('.')[-1]
             await proc.edit('**__Checking file...__**')
-            # ----------- Updated >2GB Handling (Chunk Splitting) -----------
             file_size = os.path.getsize(file)
             if file_size > 2 * 1024**3:
                 try:
@@ -274,7 +279,6 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
                     final_status = await app.send_message(sender, "All chunks uploaded successfully!")
                     asyncio.create_task(delete_after(final_status))
                 return
-            # ----------- End Chunk Splitting Block ---------------------
             if msg.voice:
                 result = await app.send_voice(target_chat_id, file)
                 await result.copy(LOG_GROUP)
@@ -516,15 +520,15 @@ async def get_msg(userbot, sender, edit_id, msg_link, i, message):
             print(f"Errrrror {e}")
             await proc.delete()
     else:
-        # For msg_links that don't contain t.me/c/ or t.me/b/,
-        # first fetch the target message to check if clonable content exists.
         try:
             chat = msg_link.split("/")[-2]
-            msg = await app.get_messages(chat, msg_id)
-            if not (msg.text or msg.media or msg.sticker):
-                # Nothing clonable; do nothing.
+            # First, try to fetch the target message.
+            try:
+                msg = await app.get_messages(chat, msg_id)
+            except Exception:
                 return
-            # Otherwise, send the processing message, copy, then auto-delete.
+            if not (msg.text or msg.media or msg.sticker):
+                return
             proc = await app.edit_message_text(sender, edit_id, "Cloning...")
             result = await copy_message_with_chat_id(app, sender, chat, msg_id)
             await proc.delete()
@@ -535,10 +539,8 @@ async def copy_message_with_chat_id(client, sender, chat_id, message_id):
     target_chat_id = user_chat_ids.get(sender, sender)
     try:
         msg = await client.get_messages(chat_id, message_id)
-        # If no clonable content is found, return False.
         if not (msg.text or msg.media or msg.sticker):
             return False
-
         custom_caption = get_user_caption_preference(sender)
         original_caption = msg.caption if msg.caption else ''
         final_caption = f"{original_caption}" if custom_caption else f"{original_caption}"
