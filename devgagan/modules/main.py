@@ -214,7 +214,7 @@ async def batch_link(_, message):
         await message.reply(response_message)
         return
 
-    join_button = InlineKeyboardButton("Join Channel", url="https://t.me/+rsngXN2zMJA5NTBl")
+    join_button = InlineKeyboardButton("Join Channel", url="https://t.me/+3bMBj190KOc3YzNk")
     keyboard = InlineKeyboardMarkup([[join_button]])
 
     pin_msg = await app.send_message(
@@ -303,7 +303,7 @@ async def batch_link(_, message):
                         link = get_link(url)
                         
                         if 't.me/b/' in link or 't.me/c/' in link:
-                            msg = await app.send_message(message.chat.id, f"Processing...")
+                            msg = await app.send_message(message.chat.id, f"Processing by Crushe...")
                             await process_and_upload_link(userbot, user_id, msg.id, link, 0, message)
                             await pin_msg.edit_text(
                             f"⚡\n__Processing: {i - cs + 1}/{cl}__\n\nBatch process started",
@@ -316,7 +316,7 @@ async def batch_link(_, message):
             if userbot.is_connected:
                 await userbot.stop()
 
-        await app.send_message(message.chat.id, "Batch completed successfully! 🎉")
+        await app.send_message(message.chat.id, "Batch completed successfully ny Crushe! 🎉")
         await set_interval(user_id, interval_minutes=20)
         await pin_msg.edit_text(
                         f"Batch completed for {cl} messages ⚡\n\n****",
