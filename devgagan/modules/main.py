@@ -13,7 +13,7 @@ from pyrogram.errors import FloodWait
 from datetime import datetime, timedelta
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-# Helper function: schedules deletion of a message after a delay (in seconds)
+# Helper: Deletes the given message after the specified delay (default: 5 seconds)
 async def auto_delete(message, delay=5):
     await asyncio.sleep(delay)
     try:
@@ -43,7 +43,10 @@ async def check_interval(user_id, freecheck):
         cooldown_end = interval_set[user_id]
         if now < cooldown_end:
             remaining_time = (cooldown_end - now).seconds // 60
-            return False, f"Please wait {remaining_time} minute(s) before sending another link. Alternatively, purchase premium for instant access.\n\n> Hey 👋 You can use /token to use the bot free for 3 hours without any time limit."
+            return (
+                False,
+                f"Please wait {remaining_time} minute(s) before sending another link. Alternatively, purchase premium for instant access.\n\n> Hey 👋 You can use /token to use the bot free for 3 hours without any time limit."
+            )
         else:
             del interval_set[user_id]
     return True, None
@@ -61,26 +64,33 @@ async def single_link(_, message):
         resp = await message.reply("You already have an ongoing process. Please wait for it to finish or cancel it with /cancel.")
         asyncio.create_task(auto_delete(resp, 5))
         return
+
     freecheck = await chk_user(message, user_id)
     if freecheck == 1 and FREEMIUM_LIMIT == 0 and user_id not in OWNER_ID:
         resp = await message.reply("Freemium service is currently not available. Upgrade to premium for access.")
         asyncio.create_task(auto_delete(resp, 5))
         return
+
     can_proceed, response_message = await check_interval(user_id, freecheck)
     if not can_proceed:
         resp = await message.reply(response_message)
         asyncio.create_task(auto_delete(resp, 5))
         return
+
     users_loop[user_id] = True
     link = get_link(message.text)
     userbot = None
+
+    # Send the initial processing message and schedule its deletion after 5 seconds
+    msg = await message.reply("Processing...")
+    asyncio.create_task(auto_delete(msg, 5))
+
     try:
         join = await subscribe(_, message)
         if join == 1:
             users_loop[user_id] = False
             return
-        msg = await message.reply("Processing...")
-        # Do not auto delete the "Processing..." msg here as it may be edited later.
+
         if 't.me/' in link and 't.me/+' not in link and 't.me/c/' not in link and 't.me/b/' not in link:
             data = await db.get_data(user_id)
             if data and data.get("session"):
@@ -95,14 +105,16 @@ async def single_link(_, message):
                         session_string=session
                     )
                     await userbot.start()
-                except Exception as e:
+                except Exception:
                     userbot = None
             else:
                 userbot = None
+
             await process_and_upload_link(userbot, user_id, msg.id, link, 0, message)
             await set_interval(user_id, interval_minutes=5)
             users_loop[user_id] = False
             return
+
         data = await db.get_data(user_id)
         if data and data.get("session"):
             session = data.get("session")
@@ -120,6 +132,7 @@ async def single_link(_, message):
             resp = await msg.edit_text("Login in bot first ...")
             asyncio.create_task(auto_delete(resp, 5))
             return
+
         try:
             if 't.me/+' in link:
                 q = await userbot_join(userbot, link)
@@ -155,11 +168,13 @@ async def batch_link(_, message):
         )
         asyncio.create_task(auto_delete(resp, 5))
         return
+
     freecheck = await chk_user(message, user_id)
     if freecheck == 1 and FREEMIUM_LIMIT == 0 and user_id not in OWNER_ID:
         resp = await message.reply("Freemium service is currently not available. Upgrade to premium for access.")
         asyncio.create_task(auto_delete(resp, 5))
         return
+
     toker = await is_user_verified(user_id)
     if toker:
         max_batch_size = (FREEMIUM_LIMIT + 1)
@@ -170,6 +185,7 @@ async def batch_link(_, message):
             max_batch_size = FREEMIUM_LIMIT
         else:
             max_batch_size = PREMIUM_LIMIT
+
     attempts = 0
     while attempts < 3:
         start = await app.ask(message.chat.id, text="Please send the start link.")
@@ -220,6 +236,7 @@ async def batch_link(_, message):
     except Exception as e:
         await pin_msg.pin(both_sides=True)
     users_loop[user_id] = True
+
     try:
         for i in range(cs, cs + cl):
             if user_id in users_loop and users_loop[user_id]:
@@ -248,26 +265,30 @@ async def batch_link(_, message):
                                 userbot = None
                         else:
                             userbot = None
-                        msg = await app.send_message(message.chat.id, f"Processing...")
-                        # Do not auto delete msg here since it is used for progress updates.
-                        await process_and_upload_link(userbot, user_id, msg.id, link, 0, message)
-                        await pin_msg.edit_text(
+
+                        proc_msg = await app.send_message(message.chat.id, "Processing...")
+                        asyncio.create_task(auto_delete(proc_msg, 5))
+                        await process_and_upload_link(userbot, user_id, proc_msg.id, link, 0, message)
+                        updated_pin = await pin_msg.edit_text(
                             f"⚡\n__Processing: {i - cs + 1}/{cl}__\n\nBatch process started",
                             reply_markup=keyboard
                         )
+                        asyncio.create_task(auto_delete(updated_pin, 5))
                 except Exception as e:
                     print(f"Error processing link {url}: {e}")
                     continue
+
         if not any(prefix in start_id for prefix in ['t.me/c/', 't.me/b/']):
             await set_interval(user_id, interval_minutes=20)
             resp = await app.send_message(message.chat.id, "Batch completed successfully! 🎉")
             asyncio.create_task(auto_delete(resp, 5))
-            resp2 = await pin_msg.edit_text(
+            updated_pin = await pin_msg.edit_text(
                 f"Batch process completed for {cl} messages enjoy 🌝\n\n****",
                 reply_markup=keyboard
             )
-            asyncio.create_task(auto_delete(resp2, 5))
+            asyncio.create_task(auto_delete(updated_pin, 5))
             return
+
         data = await db.get_data(user_id)
         if data and data.get("session"):
             session = data.get("session")
@@ -284,6 +305,7 @@ async def batch_link(_, message):
             resp = await app.send_message(message.chat.id, "Login in bot first ...")
             asyncio.create_task(auto_delete(resp, 5))
             return
+
         try:
             for i in range(cs, cs + cl):
                 if user_id in users_loop and users_loop[user_id]:
@@ -294,13 +316,14 @@ async def batch_link(_, message):
                         url = f"{result}/{i}"
                         link = get_link(url)
                         if 't.me/b/' in link or 't.me/c/' in link:
-                            msg = await app.send_message(message.chat.id, f"Processing...")
-                            # Do not auto delete msg here since it is used for progress updates.
-                            await process_and_upload_link(userbot, user_id, msg.id, link, 0, message)
-                            await pin_msg.edit_text(
+                            proc_msg = await app.send_message(message.chat.id, "Processing...")
+                            asyncio.create_task(auto_delete(proc_msg, 5))
+                            await process_and_upload_link(userbot, user_id, proc_msg.id, link, 0, message)
+                            updated_pin = await pin_msg.edit_text(
                                 f"⚡\n__Processing: {i - cs + 1}/{cl}__\n\nBatch process started",
                                 reply_markup=keyboard
                             )
+                            asyncio.create_task(auto_delete(updated_pin, 5))
                     except Exception as e:
                         print(f"Error processing link {url}: {e}")
                         continue
@@ -309,11 +332,11 @@ async def batch_link(_, message):
                 await userbot.stop()
         resp = await app.send_message(message.chat.id, "Batch completed successfully! 🎉")
         asyncio.create_task(auto_delete(resp, 5))
-        resp2 = await pin_msg.edit_text(
+        updated_pin = await pin_msg.edit_text(
             f"Batch completed for {cl} messages ⚡\n\n****",
             reply_markup=keyboard
         )
-        asyncio.create_task(auto_delete(resp2, 5))
+        asyncio.create_task(auto_delete(updated_pin, 5))
     except FloodWait as fw:
         resp = await app.send_message(
             message.chat.id,
