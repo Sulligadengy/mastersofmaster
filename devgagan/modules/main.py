@@ -316,7 +316,7 @@ async def batch_link(_, message):
             if userbot.is_connected:
                 await userbot.stop()
 
-        await app.send_message(message.chat.id, "Batch completed successfully ny Crushe! 🎉")
+        await app.send_message(message.chat.id, "Batch completed successfully by Crushe! 🎉")
         await set_interval(user_id, interval_minutes=20)
         await pin_msg.edit_text(
                         f"Batch completed for {cl} messages ⚡\n\n****",
