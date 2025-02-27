@@ -16,4 +16,4 @@ telethon-tgcrypto
 mutagen
 yt-dlp
 speedtest-cli
-pyrogram>=2.1.32
+pyrogram==2.0.106
