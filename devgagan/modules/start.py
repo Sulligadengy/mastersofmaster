@@ -44,37 +44,30 @@ async def start(client, message: Message):
     if join == 1:
         return
 
-    # Create bottom menu buttons
+    # Create persistent bottom menu bar
     bottom_menu = [
-        [InlineKeyboardButton("🚀 Start", callback_data="menu_start"),
-         InlineKeyboardButton("🔑 Login", callback_data="menu_login"),
-         InlineKeyboardButton("⚙️ Settings", callback_data="menu_settings")],
         [InlineKeyboardButton("📋 Menu", callback_data="show_menu"),
-         InlineKeyboardButton("❓ Help", callback_data="menu_help"),
-         InlineKeyboardButton("❌ Close", callback_data="close_menu")]
+         InlineKeyboardButton("💬 Message", callback_data="message"),
+         InlineKeyboardButton("📎 Attachment", callback_data="attachment"),
+         InlineKeyboardButton("🎤 Voice", callback_data="voice")]
     ]
     
     # Ensure commands are set up
     await setup_commands()
 
-    # Create menu buttons in a clean layout with descriptions
+    # Create menu buttons matching the screenshot layout
     menu_buttons = [
-        [InlineKeyboardButton("🚀 Start the bot", callback_data="cmd_start"),
-         InlineKeyboardButton("🫠 Extract in bulk", callback_data="cmd_batch")],
-        [InlineKeyboardButton("🔑 Get into the bot", callback_data="cmd_login"),
-         InlineKeyboardButton("🚪 Get out of the bot", callback_data="cmd_logout")],
-        [InlineKeyboardButton("🎲 Get 3 hours free access", callback_data="cmd_token"),
-         InlineKeyboardButton("⌛ Get your plan details", callback_data="cmd_myplan")],
-        [InlineKeyboardButton("👻 Download audio", callback_data="cmd_adl"),
-         InlineKeyboardButton("💀 Download videos", callback_data="cmd_dl")],
-        [InlineKeyboardButton("💘 Gift premium to others", callback_data="cmd_transfer"),
-         InlineKeyboardButton("⚙️ Personalize things", callback_data="cmd_settings")],
-        [InlineKeyboardButton("📊 Get stats of the bot", callback_data="cmd_stats"),
-         InlineKeyboardButton("🗓️ Check our premium plans", callback_data="cmd_plan")],
-        [InlineKeyboardButton("🥺 Terms and conditions", callback_data="cmd_terms"),
-         InlineKeyboardButton("🚅 Speed of server", callback_data="cmd_speedtest")],
-        [InlineKeyboardButton("❓ If you're a noob, still!", callback_data="cmd_help"),
-         InlineKeyboardButton("🚫 Cancel batch process", callback_data="cmd_cancel")]
+        [InlineKeyboardButton("🚀 Start the bot", callback_data="/start")],
+        [InlineKeyboardButton("🔑 Set up your user session for private channels", callback_data="/login")],
+        [InlineKeyboardButton("🤖 Set up your custom bot for uploading", callback_data="/setbot")],
+        [InlineKeyboardButton("📥 Download and upload media from a link", callback_data="/d")],
+        [InlineKeyboardButton("📁 Start batch downloading process", callback_data="/batch")],
+        [InlineKeyboardButton("⚙️ adjust bot working", callback_data="/settings")],
+        [InlineKeyboardButton("📊 fetch stats of a user", callback_data="/getstats")],
+        [InlineKeyboardButton("🌐 Set up a proxy for better connectivity", callback_data="/setproxy")],
+        [InlineKeyboardButton("🔄 Set up a proxy for better connectivity", callback_data="/transfer")],
+        [InlineKeyboardButton("🎟️ Redeem Coupon code for 1 day premium", callback_data="/redeem")],
+        [InlineKeyboardButton("🔍 Check your current session", callback_data="/session")]
     ]
 
     # Add admin-only buttons if user is owner
@@ -97,16 +90,57 @@ async def start(client, message: Message):
         "• Get premium with /plan for more features"
     )
 
+    # Send welcome message with bottom menu
     await message.reply(
         welcome_text,
-        reply_markup=InlineKeyboardMarkup(menu_buttons)
+        reply_markup=InlineKeyboardMarkup(bottom_menu)
     )
 
 # Callback query handler for menu buttons
-@app.on_callback_query(filters.regex(r"^cmd_"))
+@app.on_callback_query(filters.regex(r"^(cmd_|menu_|show_|close_|message|attachment|voice)"))
 async def handle_menu_callbacks(client, callback_query):
-    command = callback_query.data.replace("cmd_", "")
+    data = callback_query.data
     
+    if data == "show_menu":
+        # Show full menu when Menu button is clicked
+        menu_buttons_with_back = menu_buttons.copy()
+        menu_buttons_with_back.append([InlineKeyboardButton("❌ Close", callback_data="close_menu")])
+        await callback_query.message.edit_text(
+            "🚀 **Bot Commands**\n\n"
+            "Select a command to get started:",
+            reply_markup=InlineKeyboardMarkup(menu_buttons_with_back)
+        )
+        return
+    
+    elif data == "message":
+        await callback_query.answer("Send your message directly to chat")
+        return
+        
+    elif data == "attachment":
+        await callback_query.answer("Send your file as an attachment")
+        return
+        
+    elif data == "voice":
+        await callback_query.answer("Send your voice message")
+        return
+    
+    elif data == "close_menu":
+        # Delete the message when Close button is clicked
+        await callback_query.message.delete()
+        return
+    
+    elif data.startswith("menu_"):
+        # Handle menu button clicks
+        command = data.replace("menu_", "")
+        if command == "start":
+            await callback_query.message.edit_text(
+                welcome_text,
+                reply_markup=InlineKeyboardMarkup(bottom_menu)
+            )
+        return
+
+    # Handle command info buttons
+    command = data.replace("cmd_", "")
     # Map of commands to their descriptions
     command_info = {
         "start": "🚀 Use /start to begin",
