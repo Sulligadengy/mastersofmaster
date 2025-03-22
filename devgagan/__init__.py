@@ -47,12 +47,27 @@ async def restrict_bot():
     await app.start()
     from pyrogram.types import BotCommand
     await app.set_bot_commands([
-        BotCommand("start", "Launch the application"),
-        BotCommand("batch", "Download in bulk"),
-        BotCommand("login", "Login process to userbot"),
-        BotCommand("logout", "Logout and clear data"),
-        BotCommand("myplan", "View your personalized plan"),
-        BotCommand("stats", "Display statistics and insights")
+        BotCommand("start", "🚀 Start the bot"),
+        BotCommand("batch", "🫠 Extract in bulk"),
+        BotCommand("login", "🔑 Get into the bot"),
+        BotCommand("logout", "🚪 Get out of the bot"),
+        BotCommand("token", "🎲 Get 3 hours free access"),
+        BotCommand("adl", "👻 Download audio from 30+ sites"),
+        BotCommand("dl", "💀 Download videos from 30+ sites"),
+        BotCommand("transfer", "💘 Gift premium to others"),
+        BotCommand("myplan", "⌛ Get your plan details"),
+        BotCommand("add", "➕ Add user to premium"),
+        BotCommand("rem", "➖ Remove from premium"),
+        BotCommand("settings", "⚙️ Personalize things"),
+        BotCommand("stats", "📊 Get stats of the bot"),
+        BotCommand("plan", "🗓️ Check our premium plans"),
+        BotCommand("terms", "🥺 Terms and conditions"),
+        BotCommand("speedtest", "🚅 Speed of server"),
+        BotCommand("get", "🗄️ Get all user IDs"),
+        BotCommand("lock", "🔒 Protect channel from extraction"),
+        BotCommand("gcast", "⚡ Broadcast message to bot users"),
+        BotCommand("help", "❓ If you're a noob, still!"),
+        BotCommand("cancel", "🚫 Cancel batch process")
     ])
     getme = await app.get_me()
     BOT_ID = getme.id
