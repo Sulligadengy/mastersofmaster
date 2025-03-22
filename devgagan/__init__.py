@@ -42,11 +42,18 @@ async def setup_database():
     print("MongoDB TTL index created.")
 
 # You can call this in your main bot file before starting the bot
-
 async def restrict_bot():
     global BOT_ID, BOT_NAME, BOT_USERNAME
-    await setup_database()
     await app.start()
+    from pyrogram.types import BotCommand
+    await app.set_bot_commands([
+        BotCommand("start", "Launch the application"),
+        BotCommand("batch", "Download in bulk"),
+        BotCommand("login", "Login process to userbot"),
+        BotCommand("logout", "Logout and clear data"),
+        BotCommand("myplan", "View your personalized plan"),
+        BotCommand("stats", "Display statistics and insights")
+    ])
     getme = await app.get_me()
     BOT_ID = getme.id
     BOT_USERNAME = getme.username
@@ -56,6 +63,11 @@ async def restrict_bot():
         BOT_NAME = getme.first_name
     if STRING:
         await pro.start()
+
+
+loop.run_until_complete(restrict_bot())
+
+
 
 
 loop.run_until_complete(restrict_bot())
