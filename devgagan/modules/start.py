@@ -1,14 +1,138 @@
+
 from pyrogram import filters
 from devgagan import app
 from config import OWNER_ID
 from devgagan.core.func import subscribe
 import asyncio
-from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, Message
 from pyrogram.raw.functions.bots import SetBotInfo
 from pyrogram.raw.types import InputUserSelf
-# ------------------- Start-Buttons ------------------- #
-
 from pyrogram.types import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.enums import ParseMode
+
+# Register bot commands
+async def setup_commands():
+    commands = [
+        BotCommand("start", "🚀 Start the bot"),
+        BotCommand("batch", "🫠 Extract in bulk"),
+        BotCommand("login", "🔑 Get into the bot"),
+        BotCommand("logout", "🚪 Get out of the bot"),
+        BotCommand("token", "🎲 Get 3 hours free access"),
+        BotCommand("adl", "👻 Download audio from 30+ sites"),
+        BotCommand("dl", "💀 Download videos from 30+ sites"),
+        BotCommand("transfer", "💘 Gift premium to others"),
+        BotCommand("myplan", "⌛ Get your plan details"),
+        BotCommand("add", "➕ Add user to premium"),
+        BotCommand("rem", "➖ Remove from premium"),
+        BotCommand("settings", "⚙️ Personalize things"),
+        BotCommand("stats", "📊 Get stats of the bot"),
+        BotCommand("plan", "🗓️ Check our premium plans"),
+        BotCommand("terms", "🥺 Terms and conditions"),
+        BotCommand("speedtest", "🚅 Speed of server"),
+        BotCommand("get", "🗄️ Get all user IDs"),
+        BotCommand("lock", "🔒 Protect channel from extraction"),
+        BotCommand("gcast", "⚡ Broadcast message to bot users"),
+        BotCommand("help", "❓ If you're a noob, still!"),
+        BotCommand("cancel", "🚫 Cancel batch process")
+    ]
+    await app.set_bot_commands(commands)
+
+# Start command handler
+@app.on_message(filters.command("start") & filters.private)
+async def start(client, message: Message):
+    join = await subscribe(client, message)
+    if join == 1:
+        return
+
+    # Create bottom menu buttons
+    bottom_menu = [
+        [InlineKeyboardButton("🚀 Start", callback_data="menu_start"),
+         InlineKeyboardButton("🔑 Login", callback_data="menu_login"),
+         InlineKeyboardButton("⚙️ Settings", callback_data="menu_settings")],
+        [InlineKeyboardButton("📋 Menu", callback_data="show_menu"),
+         InlineKeyboardButton("❓ Help", callback_data="menu_help"),
+         InlineKeyboardButton("❌ Close", callback_data="close_menu")]
+    ]
+    
+    # Ensure commands are set up
+    await setup_commands()
+
+    # Create menu buttons in a clean layout with descriptions
+    menu_buttons = [
+        [InlineKeyboardButton("🚀 Start the bot", callback_data="cmd_start"),
+         InlineKeyboardButton("🫠 Extract in bulk", callback_data="cmd_batch")],
+        [InlineKeyboardButton("🔑 Get into the bot", callback_data="cmd_login"),
+         InlineKeyboardButton("🚪 Get out of the bot", callback_data="cmd_logout")],
+        [InlineKeyboardButton("🎲 Get 3 hours free access", callback_data="cmd_token"),
+         InlineKeyboardButton("⌛ Get your plan details", callback_data="cmd_myplan")],
+        [InlineKeyboardButton("👻 Download audio", callback_data="cmd_adl"),
+         InlineKeyboardButton("💀 Download videos", callback_data="cmd_dl")],
+        [InlineKeyboardButton("💘 Gift premium to others", callback_data="cmd_transfer"),
+         InlineKeyboardButton("⚙️ Personalize things", callback_data="cmd_settings")],
+        [InlineKeyboardButton("📊 Get stats of the bot", callback_data="cmd_stats"),
+         InlineKeyboardButton("🗓️ Check our premium plans", callback_data="cmd_plan")],
+        [InlineKeyboardButton("🥺 Terms and conditions", callback_data="cmd_terms"),
+         InlineKeyboardButton("🚅 Speed of server", callback_data="cmd_speedtest")],
+        [InlineKeyboardButton("❓ If you're a noob, still!", callback_data="cmd_help"),
+         InlineKeyboardButton("🚫 Cancel batch process", callback_data="cmd_cancel")]
+    ]
+
+    # Add admin-only buttons if user is owner
+    if message.from_user.id in OWNER_ID:
+        menu_buttons.extend([
+            [InlineKeyboardButton("➕ Add Premium", callback_data="cmd_add"),
+             InlineKeyboardButton("➖ Remove Premium", callback_data="cmd_rem")],
+            [InlineKeyboardButton("🗄️ Get IDs", callback_data="cmd_get"),
+             InlineKeyboardButton("🔒 Lock Channel", callback_data="cmd_lock")],
+            [InlineKeyboardButton("⚡ Broadcast", callback_data="cmd_gcast")]
+        ])
+
+    welcome_text = (
+        "👋 **Welcome to Advance Content Saver Bot!**\n\n"
+        "I can help you save and manage content from various sources. "
+        "Here are some quick actions to get started:\n\n"
+        "• Use /login to access private channels\n"
+        "• Try /batch for bulk downloads\n"
+        "• Check /help for detailed instructions\n"
+        "• Get premium with /plan for more features"
+    )
+
+    await message.reply(
+        welcome_text,
+        reply_markup=InlineKeyboardMarkup(menu_buttons)
+    )
+
+# Callback query handler for menu buttons
+@app.on_callback_query(filters.regex(r"^cmd_"))
+async def handle_menu_callbacks(client, callback_query):
+    command = callback_query.data.replace("cmd_", "")
+    
+    # Map of commands to their descriptions
+    command_info = {
+        "start": "🚀 Use /start to begin",
+        "batch": "🫠 Use /batch to extract in bulk",
+        "login": "🔑 Use /login to access private channels",
+        "logout": "🚪 Use /logout to sign out",
+        "token": "🎲 Use /token for 3 hours free access",
+        "adl": "👻 Use /adl to download audio",
+        "dl": "💀 Use /dl to download videos",
+        "transfer": "💘 Use /transfer to gift premium",
+        "myplan": "⌛ Use /myplan to check your subscription",
+        "add": "➕ Use /add to grant premium access",
+        "rem": "➖ Use /rem to remove premium access",
+        "settings": "⚙️ Use /settings to customize bot",
+        "stats": "📊 Use /stats to view bot statistics",
+        "plan": "🗓️ Use /plan to see premium options",
+        "terms": "🥺 Use /terms to read conditions",
+        "speedtest": "🚅 Use /speedtest to check server speed",
+        "get": "🗄️ Use /get to fetch user IDs",
+        "lock": "🔒 Use /lock to protect channels",
+        "gcast": "⚡ Use /gcast to broadcast messages",
+        "help": "❓ Use /help for instructions",
+        "cancel": "🚫 Use /cancel to stop processes"
+    }
+
+    await callback_query.answer(command_info.get(command, "Command not found"))
 # Set bot commands in one place
 @app.on_message(filters.command("set"))
 async def set(_, message):
